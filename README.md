@@ -9,7 +9,7 @@ A production-grade, highly concurrent agent orchestration engine built completel
 3. **The Async Tool Runner:** A sandboxed execution pool that runs external APIs or local scripts concurrently with strict timeout and retry policies.
 4. **The Context Window & Memory Gate:** A token-aware memory manager that dynamically compacts or truncates history to prevent context overflow.
 
-## Technical Signals (For Interviewers)
+## Technical Signals
 * **Concurrency Primitives:** Heavy utilization of native Go Goroutines, Channels, and Mutexes for safe data routing.
 * **Resilience Patterns:** Custom implementation of Circuit Breakers and Exponential Backoff for distributed API interactions.
 * **Memory & I/O Optimization:** Low-level token calculation, text parsing, and non-blocking network streams.

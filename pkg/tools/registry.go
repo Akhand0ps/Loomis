@@ -29,8 +29,6 @@ type Registry struct {
 }
 
 func NewRegistry() *Registry{
-
-
 	return &Registry{
 		mutexx: sync.RWMutex{},
 		tools: make(map[string]registeredTool),

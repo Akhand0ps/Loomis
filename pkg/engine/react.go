@@ -3,6 +3,7 @@ package engine
 import (
 	"agent-engine/pkg/tools"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -66,6 +67,9 @@ func (a *ReActAgent) Run(ctx context.Context,goal string)(string,error){
 		if err != nil{
 
 			history += fmt.Sprintf("\nSystem Error: %s",err)
+			fmt.Println("parse Error:",err.Error())
+
+			continue
 		}
 
 		if parsed.Action == "final_answer"{
@@ -73,13 +77,21 @@ func (a *ReActAgent) Run(ctx context.Context,goal string)(string,error){
 		}
 
 		if parsed.Action == "tool_call"{
-			op,err := a.register.Execute(ctx,parsed.ToolName,parsed.ToolInput,5 *time.Second)
+			output,err := a.register.Execute(ctx,parsed.ToolName,parsed.ToolInput,5 *time.Second)
 
 			if err !=nil{
 				///
+				history +=fmt.Sprintf("\nTool Error: %s\n",err)
+				// continued
+			} else{
+
+				history += fmt.Sprintf("\nObservation: %s\n",output)
 			}
-			//observation left. 
+
+
 		}
 	}
+
+	return "",errors.New("max resoning steps exceeded without reaching a final answer")
 
 }

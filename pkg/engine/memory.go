@@ -112,3 +112,4 @@ func (cw *ContextWindow)RenderPrompt()string{
 
 	return sb.String()
 }
+

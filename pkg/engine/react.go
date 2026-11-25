@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	// "fmt"
 	"time"
 )
 
@@ -47,27 +49,34 @@ Rules:
 
 func (a *ReActAgent) Run(ctx context.Context,goal string)(string,error){
 
-	history := fmt.Sprintf("%s\n\nUser Goal: %s\n",systemPrompt,goal)
+	// history := fmt.Sprintf("%s\n\nUser Goal: %s\n",systemPrompt,goal)
+	mem := NewContextWindow(2000) 
 
-	fmt.Println("history: ",history)
+	mem.Add("system",fmt.Sprintf("System: %s",systemPrompt),true)
+	mem.Add("user",fmt.Sprintf("User Goal: %s",goal),true)
+
+	// fmt.Println("history: ",history)
 
 	for step :=0;step < a.maxSteps; step++{
 
-		raw,err := a.llm.Generate(ctx,history)
+		raw,err := a.llm.Generate(ctx,mem.RenderPrompt())
 
 		if err != nil{
 
 			return  "",err
 		}
 
-		history += fmt.Sprintf("\nAgent Response:\n%s",raw)
+		// history += fmt.Sprintf("\nAgent Response:\n%s",raw)
+		mem.Add("agent",fmt.Sprintf("agentResponse: %s",raw),false)
+		
 
 		parsed,err := ParseStep(raw)
 
 		if err != nil{
 
-			history += fmt.Sprintf("\nSystem Error: %s",err)
-			fmt.Println("parse Error:",err.Error())
+			// history += fmt.Sprintf("\nSystem Error: %s",err)
+			mem.Add("observation",fmt.Sprintf("observation: %s",err.Error()),false)
+			// fmt.Println("parse Error:",err.Error())
 
 			continue
 		}
@@ -81,11 +90,13 @@ func (a *ReActAgent) Run(ctx context.Context,goal string)(string,error){
 
 			if err !=nil{
 				///
-				history +=fmt.Sprintf("\nTool Error: %s\n",err)
+				// history +=fmt.Sprintf("\nTool Error: %s\n",err)
+				mem.Add("observation:",fmt.Sprintf("Tool Error: %s",err.Error()),false)
 				// continued
 			} else{
 
-				history += fmt.Sprintf("\nObservation: %s\n",output)
+				// history += fmt.Sprintf("\nObservation: %s\n",output)
+				mem.Add("observation:",fmt.Sprintf("Observation: %s",output),false)
 			}
 
 

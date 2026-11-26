@@ -2,6 +2,7 @@ package main
 
 import (
 	"agent-engine/pkg/engine"
+	"agent-engine/pkg/scheduler"
 	"agent-engine/pkg/tools"
 	"bytes"
 	"context"
@@ -9,51 +10,32 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
 	// "os"
 	"sync"
 	// "time"
 )
 
-type Task struct {
-	Id      int
-	Goal    string
-}
-type TaskResult struct{
-	TaskId   int
-	WorkerId  int
-	Output    string
-	Err      error
-}
-
-func worker(reg *tools.Registry, workerid int, queue <-chan Task, results chan<- TaskResult) {
+func worker(reg *tools.Registry, workerid int,queue <-chan *scheduler.DAGTask, results chan <-scheduler.TaskResult){
 
 	for job := range queue {
-		// fmt.Printf("worker %d started for jobid : %d | payload: %s\n", workerid, job.Id, job.Payload)
-		// time.Sleep(time.Second)
-		// fmt.Println()
-		// fmt.Printf("worker %d finished for the jobid : %d\n", workerid, job.Id)
-
 		ctx := context.Background()
-		// output,err := reg.Execute(ctx,job.ToolName,job.Payload,2*time.Second)
-		// if err != nil {
-		// 	fmt.Printf("worker %d: tool error: %v\n",workerid,err)
-		// } else {
-		// 	fmt.Printf("worker %d: tool output: %s\n",workerid,output)
-		// }
-
 
 		mock:= &MockLLM{}
+
 		agent := engine.NewAgent(mock,reg,5)
+
 		ans,err := agent.Run(ctx,job.Goal)
+		
 		if err != nil{
-			results <- TaskResult{
+			results <- scheduler.TaskResult{
 				TaskId:job.Id,
 				WorkerId:workerid,
 				Output:"",
 				Err: err,
 			}
 		}else{
-			results <- TaskResult{
+			results <- scheduler.TaskResult{
 				TaskId:job.Id,
 				WorkerId:workerid,
 				Output:ans,
@@ -65,7 +47,7 @@ func worker(reg *tools.Registry, workerid int, queue <-chan Task, results chan<-
 
 
 //using chat <-int because only sender can close the channel not the receiver.
-func closeWorker(wg *sync.WaitGroup,results chan<- TaskResult){
+func closeWorker(wg *sync.WaitGroup,results chan<- scheduler.TaskResult){
 	wg.Wait()  //pause here until worker finish
 	close(results) //shut down the pipe
 
@@ -203,32 +185,14 @@ func main() {
 		return fmt.Sprintf("18 degree celcius, clear skies in %s",input),nil
 	})
 
-	// apiKey := os.Getenv("OPENROUTER_API_KEY")
-	// if apiKey == ""{
-	// 	fmt.Println("Please set OPENROUTER_API_KEY")
-	// 	return
-	// }
+	
 
-	// llm := &OpenRouterClient{
-	// 	apiKey: apiKey,
-	// 	model: "google/gemini-2.0-flash-exp:free",
-	// }
-
-	// agent := engine.NewAgent(llm,reg,5)
-
-	// ans,err := agent.Run(context.Background(),"What is the weather in Paris rightnow?")
-	// if err != nil {
-	// 	fmt.Println("error: ",err)
-	// } else {
-		// fmt.Println("answer: ",ans)
-	// }
-
-	taskcnt := 5
-	queue := make(chan Task, taskcnt) //buffered
-	results := make(chan TaskResult, taskcnt) //buffered
+	queue := make(chan *scheduler.DAGTask, 10) //buffered
+	results := make(chan scheduler.TaskResult, 10) //buffered
 
 	var wg sync.WaitGroup
 
+	dag:=scheduler.NewDAG()
 
 	for i := 1; i <= 3; i++ {
 		wg.Go(func() {
@@ -237,62 +201,46 @@ func main() {
 		})
 	}
 
-	for i := 1; i <= 5; i++ {
+	for i := 1; i <= 3; i++ {
 
 		switch i{
-		
 		case 1:
-			task := Task{
+			task := scheduler.DAGTask{
 				Id: i,
-				Goal: "Tokyo",
+				Title:"weather",
+				Goal: "tokyo",
+				DependsOn: []int{},
+					
 			}
-			queue <- task
-			
+			dag.AddTask(&task)			
 		case 2:
-			task := Task{
+			task := scheduler.DAGTask{
 				Id: i,
-				Goal: "London",
-			}
-			queue <- task
-		case 3:
-			task := Task{
-				Id: i,
-				Goal: "Paris",
-			}
-			queue <- task
-		case 4:
-			task := Task{
-				Id: i,
-				Goal: "Jalandhar",
-			}
-			queue <- task
-		case 5:
-			task := Task{
-				Id: i,
+				Title:"weather",
 				Goal: "Delhi",
+				DependsOn: []int{},
+				
 			}
-			queue <- task
-
+			dag.AddTask(&task)
+		case 3:
+			task := scheduler.DAGTask{
+				Id: i,
+				Title:"weather",
+				Goal: "Paris",
+				DependsOn: []int{1,2},
+				
+			}
+			dag.AddTask(&task)
 		}
+	}
 
-
+	err:= dag.Execute(queue,results)
+	if err != nil{
+		fmt.Println("err: ",err)
 	}
 	close(queue)
 
-	go closeWorker(&wg,results);
-
-	for result := range results {
-
-		// fmt.Println("execution_done: ", result)
-
-		if result.Err != nil{
-			fmt.Printf("Worker %d failed task %d: %v\n",result.WorkerId,result.TaskId,result.Err)
-		} else{
-			fmt.Printf("Worker %d finished task %d: %s\n",result.WorkerId,result.TaskId,result.Output)
-		}
-
-	}
-
+	wg.Wait()
 
 	
 }

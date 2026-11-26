@@ -1,5 +1,10 @@
 package scheduler
 
+import (
+	"errors"
+	"fmt"
+)
+
 
 type TaskStatus int
 const (
@@ -11,8 +16,8 @@ const (
 
 type DAGTask struct{
 
-	ID int
-	title string
+	Id int
+	Title string
 	Goal string
 	DependsOn []int
 	Status TaskStatus
@@ -24,7 +29,7 @@ type DAG struct{
 
 	tasks map[int]*DAGTask
 }
-
+//constructor 
 func NewDAG()*DAG{
 	return &DAG{
 		tasks: make(map[int]*DAGTask),
@@ -35,7 +40,7 @@ func(d *DAG) AddTask(task *DAGTask){
 	if task == nil {
 		return
 	}
-	d.tasks[task.ID] = task
+	d.tasks[task.Id] = task
 }
 
 func(d *DAG) IsReadyToRun(task *DAGTask)bool{
@@ -67,3 +72,56 @@ func(d * DAG) GetReadyTasks()[]*DAGTask{
 
 	return readyTasks
 }
+
+///dispactcher
+
+type TaskResult struct {
+	TaskId int
+	WorkerId int
+	Output  string
+	Err  error
+}
+
+
+func (d *DAG) Execute(queue chan<- *DAGTask,results <-chan TaskResult)error{
+
+
+	totalTasks := len(d.tasks)
+
+	completedCount := 0
+
+	for _, task := range d.GetReadyTasks(){
+		task.Status = StatusRunning
+		fmt.Println("sending task to queue: ",task.Id)
+		queue <- task
+	}
+
+	for completedCount < totalTasks{
+
+		res := <-results
+
+		task := d.tasks[res.TaskId]
+
+		if res.Err != nil{
+			task.Status = StatusFailed
+			task.Err = res.Err
+
+			return errors.New("abort the DAG")
+		}
+
+		task.Status = StatusCompleted
+		task.Output = res.Output
+		completedCount++
+
+		fmt.Println("res: ",res.Output)
+
+		for _, nextTask := range d.GetReadyTasks(){
+			nextTask.Status = StatusRunning
+			queue <- nextTask
+		}
+	}
+
+	return nil
+
+}
+

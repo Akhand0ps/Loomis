@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 460" width="880" height="460" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">
+  <rect width="880" height="460" fill="#0d1117" rx="8"/>
+
+  <!-- Title -->
+  <text x="28" y="34" fill="#e6edf3" font-size="15" font-weight="700">Loomis — System Architecture</text>
+  <text x="28" y="54" fill="#8b949e" font-size="11">Standard-library Go (no external frameworks)</text>
+
+  <!-- main.go / Scheduler -->
+  <rect x="28" y="76" width="240" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="44" y="100" fill="#58a6ff" font-size="12" font-weight="700">pkg/scheduler/dag.go</text>
+  <text x="44" y="120" fill="#e6edf3" font-size="11">DAG.Execute(queue, results)</text>
+  <text x="44" y="140" fill="#8b949e" font-size="10">- Tracks TaskStatus per node</text>
+  <text x="44" y="156" fill="#8b949e" font-size="10">- GetReadyTasks() checks DependsOn</text>
+  <text x="44" y="172" fill="#8b949e" font-size="10">- Dispatches ready *DAGTask</text>
+  <text x="44" y="188" fill="#8b949e" font-size="10">- Collects TaskResult &amp; unlocks next</text>
+  <text x="44" y="212" fill="#7ee787" font-size="10">Entry: main.go (3 workers, WaitGroup)</text>
+
+  <!-- Channels -->
+  <rect x="308" y="92" width="170" height="46" rx="5" fill="#161b22" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="322" y="112" fill="#79c0ff" font-size="11" font-weight="700">queue (buffered chan)</text>
+  <text x="322" y="128" fill="#8b949e" font-size="10">*scheduler.DAGTask</text>
+
+  <rect x="308" y="164" width="170" height="46" rx="5" fill="#161b22" stroke="#238636" stroke-width="1.5"/>
+  <text x="322" y="184" fill="#7ee787" font-size="11" font-weight="700">results (buffered chan)</text>
+  <text x="322" y="200" fill="#8b949e" font-size="10">scheduler.TaskResult</text>
+
+  <!-- Arrows Scheduler <-> Channels -->
+  <line x1="268" y1="115" x2="306" y2="115" stroke="#58a6ff" stroke-width="1.5"/>
+  <polygon points="306,115 299,111 299,119" fill="#58a6ff"/>
+
+  <line x1="308" y1="187" x2="270" y2="187" stroke="#3fb950" stroke-width="1.5"/>
+  <polygon points="270,187 277,183 277,191" fill="#3fb950"/>
+
+  <!-- Worker Pool -->
+  <rect x="520" y="76" width="332" height="150" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="536" y="100" fill="#d2a8ff" font-size="12" font-weight="700">Worker Pool (main.go)</text>
+  <rect x="536" y="114" width="94" height="50" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="552" y="136" fill="#e6edf3" font-size="11">Worker 1</text>
+  <text x="546" y="152" fill="#8b949e" font-size="9">goroutine</text>
+
+  <rect x="640" y="114" width="94" height="50" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="656" y="136" fill="#e6edf3" font-size="11">Worker 2</text>
+  <text x="650" y="152" fill="#8b949e" font-size="9">goroutine</text>
+
+  <rect x="744" y="114" width="94" height="50" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="760" y="136" fill="#e6edf3" font-size="11">Worker 3</text>
+  <text x="754" y="152" fill="#8b949e" font-size="9">goroutine</text>
+
+  <text x="536" y="190" fill="#8b949e" font-size="10">Each job instantiates an isolated ReActAgent</text>
+  <text x="536" y="206" fill="#8b949e" font-size="10">with its own ContextWindow and LLMClient.</text>
+
+  <!-- Arrows Channels <-> Workers -->
+  <line x1="478" y1="115" x2="518" y2="115" stroke="#58a6ff" stroke-width="1.5"/>
+  <polygon points="518,115 511,111 511,119" fill="#58a6ff"/>
+
+  <line x1="520" y1="187" x2="480" y2="187" stroke="#3fb950" stroke-width="1.5"/>
+  <polygon points="480,187 487,183 487,191" fill="#3fb950"/>
+
+  <!-- pkg/engine -->
+  <rect x="28" y="264" width="440" height="168" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="44" y="288" fill="#ffa657" font-size="12" font-weight="700">pkg/engine — Agent Runtime</text>
+
+  <rect x="44" y="302" width="128" height="112" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="54" y="322" fill="#e6edf3" font-size="11" font-weight="700">react.go</text>
+  <text x="54" y="340" fill="#8b949e" font-size="9">ReActAgent.Run()</text>
+  <text x="54" y="356" fill="#8b949e" font-size="9">Bounded maxSteps</text>
+  <text x="54" y="372" fill="#8b949e" font-size="9">Self-healing retry</text>
+  <text x="54" y="388" fill="#8b949e" font-size="9">on parse errors</text>
+
+  <rect x="184" y="302" width="128" height="112" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="194" y="322" fill="#e6edf3" font-size="11" font-weight="700">memory.go</text>
+  <text x="194" y="340" fill="#8b949e" font-size="9">ContextWindow</text>
+  <text x="194" y="356" fill="#8b949e" font-size="9">Pinned system+goal</text>
+  <text x="194" y="372" fill="#8b949e" font-size="9">FIFO eviction</text>
+  <text x="194" y="388" fill="#8b949e" font-size="9">50% truncation guard</text>
+
+  <rect x="324" y="302" width="128" height="112" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="334" y="322" fill="#e6edf3" font-size="11" font-weight="700">parser.go</text>
+  <text x="334" y="340" fill="#8b949e" font-size="9">ParseStep(raw)</text>
+  <text x="334" y="356" fill="#8b949e" font-size="9">Slices { ... }</text>
+  <text x="334" y="372" fill="#8b949e" font-size="9">json.Unmarshal</text>
+  <text x="334" y="388" fill="#8b949e" font-size="9">Validates Action</text>
+
+  <!-- pkg/tools -->
+  <rect x="500" y="264" width="352" height="168" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="516" y="288" fill="#f78166" font-size="12" font-weight="700">pkg/tools — Resilient Tool Execution</text>
+
+  <rect x="516" y="302" width="154" height="112" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="526" y="322" fill="#e6edf3" font-size="11" font-weight="700">registry.go</text>
+  <text x="526" y="340" fill="#8b949e" font-size="9">sync.RWMutex map</text>
+  <text x="526" y="356" fill="#8b949e" font-size="9">Per-tool breaker</text>
+  <text x="526" y="372" fill="#8b949e" font-size="9">context.WithTimeout</text>
+  <text x="526" y="388" fill="#8b949e" font-size="9">Lock-free execution</text>
+
+  <rect x="682" y="302" width="154" height="112" rx="4" fill="#0d1117" stroke="#30363d"/>
+  <text x="692" y="322" fill="#e6edf3" font-size="11" font-weight="700">breaker.go</text>
+  <text x="692" y="340" fill="#8b949e" font-size="9">StateClosed</text>
+  <text x="692" y="356" fill="#8b949e" font-size="9">StateOpen (fail-fast)</text>
+  <text x="692" y="372" fill="#8b949e" font-size="9">StateHalfOpen</text>
+  <text x="692" y="388" fill="#8b949e" font-size="9">Unlocks during fn()</text>
+
+  <!-- Vertical Connectors -->
+  <line x1="686" y1="226" x2="686" y2="262" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <line x1="468" y1="358" x2="498" y2="358" stroke="#ffa657" stroke-width="1.5"/>
+  <polygon points="498,358 491,354 491,362" fill="#ffa657"/>
+</svg>

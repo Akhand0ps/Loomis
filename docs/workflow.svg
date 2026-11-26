@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 390" width="880" height="390" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">
+  <rect width="880" height="390" fill="#0d1117" rx="8"/>
+
+  <!-- Section 1: DAG Execution Workflow -->
+  <text x="28" y="34" fill="#e6edf3" font-size="14" font-weight="700">1. DAG Dependency Workflow (pkg/scheduler/dag.go)</text>
+
+  <rect x="28" y="54" width="190" height="58" rx="5" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="42" y="76" fill="#79c0ff" font-size="11" font-weight="700">Task 1 (tokyo)</text>
+  <text x="42" y="94" fill="#8b949e" font-size="10">DependsOn: [] (Ready)</text>
+
+  <rect x="28" y="128" width="190" height="58" rx="5" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="42" y="150" fill="#79c0ff" font-size="11" font-weight="700">Task 2 (Delhi)</text>
+  <text x="42" y="168" fill="#8b949e" font-size="10">DependsOn: [] (Ready)</text>
+
+  <rect x="278" y="90" width="160" height="58" rx="5" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="292" y="112" fill="#d2a8ff" font-size="11" font-weight="700">Worker Pool</text>
+  <text x="292" y="130" fill="#8b949e" font-size="10">Runs 1 &amp; 2 in parallel</text>
+
+  <rect x="498" y="90" width="170" height="58" rx="5" fill="#161b22" stroke="#238636" stroke-width="1.5"/>
+  <text x="512" y="112" fill="#7ee787" font-size="11" font-weight="700">GetReadyTasks()</text>
+  <text x="512" y="130" fill="#8b949e" font-size="10">1 &amp; 2 StatusCompleted</text>
+
+  <rect x="720" y="90" width="132" height="58" rx="5" fill="#161b22" stroke="#ffa657" stroke-width="1.5"/>
+  <text x="734" y="112" fill="#ffa657" font-size="11" font-weight="700">Task 3 (Paris)</text>
+  <text x="734" y="130" fill="#8b949e" font-size="10">DependsOn: [1, 2]</text>
+
+  <!-- DAG Arrows -->
+  <line x1="218" y1="83" x2="276" y2="110" stroke="#58a6ff" stroke-width="1.5"/>
+  <line x1="218" y1="157" x2="276" y2="128" stroke="#58a6ff" stroke-width="1.5"/>
+  <line x1="438" y1="119" x2="496" y2="119" stroke="#8b949e" stroke-width="1.5"/>
+  <polygon points="496,119 489,115 489,123" fill="#8b949e"/>
+  <line x1="668" y1="119" x2="718" y2="119" stroke="#3fb950" stroke-width="1.5"/>
+  <polygon points="718,119 711,115 711,123" fill="#3fb950"/>
+
+  <!-- Divider -->
+  <line x1="28" y1="212" x2="852" y2="212" stroke="#30363d" stroke-width="1"/>
+
+  <!-- Section 2: ReAct + Circuit Breaker Workflow -->
+  <text x="28" y="242" fill="#e6edf3" font-size="14" font-weight="700">2. Per-Task ReAct &amp; Tool Workflow (pkg/engine + pkg/tools)</text>
+
+  <rect x="28" y="264" width="146" height="62" rx="5" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="40" y="286" fill="#e6edf3" font-size="11" font-weight="700">RenderPrompt()</text>
+  <text x="40" y="304" fill="#8b949e" font-size="9">Pinned + sliding window</text>
+
+  <rect x="206" y="264" width="146" height="62" rx="5" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+  <text x="218" y="286" fill="#e6edf3" font-size="11" font-weight="700">llm.Generate()</text>
+  <text x="218" y="304" fill="#8b949e" font-size="9">ParseStep(raw)</text>
+
+  <rect x="384" y="264" width="150" height="62" rx="5" fill="#161b22" stroke="#ffa657" stroke-width="1.5"/>
+  <text x="396" y="286" fill="#ffa657" font-size="11" font-weight="700">Action == tool_call</text>
+  <text x="396" y="304" fill="#8b949e" font-size="9">reg.Execute(timeout)</text>
+
+  <rect x="566" y="264" width="140" height="62" rx="5" fill="#161b22" stroke="#f78166" stroke-width="1.5"/>
+  <text x="578" y="286" fill="#f78166" font-size="11" font-weight="700">CircuitBreaker</text>
+  <text x="578" y="304" fill="#8b949e" font-size="9">Closed/Open/HalfOpen</text>
+
+  <rect x="738" y="264" width="114" height="62" rx="5" fill="#161b22" stroke="#238636" stroke-width="1.5"/>
+  <text x="748" y="286" fill="#7ee787" font-size="11" font-weight="700">final_answer</text>
+  <text x="748" y="304" fill="#8b949e" font-size="9">Return output</text>
+
+  <!-- ReAct Arrows -->
+  <line x1="174" y1="295" x2="204" y2="295" stroke="#8b949e" stroke-width="1.5"/>
+  <polygon points="204,295 197,291 197,299" fill="#8b949e"/>
+
+  <line x1="352" y1="295" x2="382" y2="295" stroke="#8b949e" stroke-width="1.5"/>
+  <polygon points="382,295 375,291 375,299" fill="#8b949e"/>
+
+  <line x1="534" y1="295" x2="564" y2="295" stroke="#8b949e" stroke-width="1.5"/>
+  <polygon points="564,295 557,291 557,299" fill="#8b949e"/>
+
+  <!-- Loop back from CircuitBreaker to RenderPrompt (Observation) -->
+  <path d="M 636 326 L 636 362 L 101 362 L 101 328" fill="none" stroke="#58a6ff" stroke-width="1.5"/>
+  <polygon points="101,328 97,335 105,335" fill="#58a6ff"/>
+  <text x="275" y="355" fill="#79c0ff" font-size="10">mem.Add("observation", output or error, false)</text>
+
+  <!-- Exit arrow from ParseStep to final_answer -->
+  <path d="M 279 264 L 279 248 L 795 248 L 795 262" fill="none" stroke="#3fb950" stroke-width="1.5"/>
+  <polygon points="795,262 791,255 799,255" fill="#3fb950"/>
+</svg>
